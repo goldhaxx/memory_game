@@ -1,5 +1,7 @@
-fn main() {
+#[cfg_attr(target_arch = "wasm32",
+wasm_bindgen::prelude::wasm_bindgen(start))]
 
+pub fn main() {
     use slint::Model;
 
     let main_window = MainWindow::new().unwrap();
@@ -52,7 +54,6 @@ fn main() {
         main_window.run().unwrap();
     }
     slint::slint! {
-
         // Added
         struct TileData {
             image: image,
@@ -61,15 +62,17 @@ fn main() {
         }
 
     component MemoryTile inherits Rectangle {
+        padding: 5px;
         callback clicked;
         in property <bool> open_curtain;
         in property <bool> solved;
         in property <image> icon;
-        
+        animate background { duration: 800ms;}
+        border-radius: 5px;
         width: 64px;
         height: 64px;
         background: solved ? #34CE57 : #3960D5;
-        animate background { duration: 800ms;}
+        clip: true;
 
         Image {
             source: icon;
@@ -79,30 +82,46 @@ fn main() {
 
         // left curtain
         Rectangle {
+            clip: true;
+            border-radius: 5px;
             background: #193076;
             x: 0px;
             width: open_curtain ? 0px : (parent.width / 2);
             height: parent.height;
             animate width { duration: 250ms; easing: ease-in;}
-    }
-
-    //Right curtain
-    Rectangle {
-        background: #193076;
-        x: open_curtain ? parent.width : (parent.width / 2);
-        width: open_curtain ? 0px : (parent.width / 2);
-        height: parent.height;
-        animate width { duration: 250ms; easing: ease-in;}
-        animate x { duration: 250ms; easing: ease-in;}
-    }
-
-    TouchArea {
-        clicked => {
-            //Delegate to the user of this element
-            root.clicked();
+            Image {
+                height: 50px;
+                source: @image-url("icons/tile-icon-128.png");
+                source-clip-x: -90;
+                image-fit: contain;
+            }
         }
-    }
-}
+
+        //Right curtain
+        Rectangle {
+            border-radius: 5px;
+            background: #193076;
+            x: open_curtain ? parent.width : (parent.width / 2);
+            width: open_curtain ? 0px : (parent.width / 2);
+            height: parent.height;
+            animate width { duration: 250ms; easing: ease-in;}
+            animate x { duration: 250ms; easing: ease-in;}
+            clip: true;
+            Image {
+                height: 50px;
+                source: @image-url("icons/tile-icon-128.png");
+                source-clip-x: 70;
+                image-fit: contain;
+            }
+        }
+        
+        TouchArea {
+            clicked => {
+                //Delegate to the user of this element
+                root.clicked();
+            }
+        }
+    }   
 
     export component MainWindow inherits Window {
         width: 326px;
@@ -122,6 +141,7 @@ fn main() {
             { image: @image-url("icons/video.png") },
         ];
         for tile[i] in memory_tiles : MemoryTile {
+            
             x: mod(i, 4) * 74px;
             y: floor(i / 4) * 74px;
             width: 64px;
